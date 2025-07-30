@@ -1,0 +1,15 @@
+1. forwardRef, useRef를 사용하는 이유
+- 자식 컴포넌트로 분리해야 할 것들 : 값, 에러 메시지, 검증 함수
+- 검증 함수를 부모에 둔다면 -> 재사용이 안된다
+  function MemberSignup {
+    const usernameCheck=()=>{}
+    const passwordCheck=()=>{}
+    const confirmPasswordCheck=()=>{}
+    const emailCheck=()=>{}
+    return (
+      <div>
+        <Username check={usernameCheck} />
+        <Password check={passwordCheck} />
+      </div>
+    )
+  }

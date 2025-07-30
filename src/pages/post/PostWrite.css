@@ -1,0 +1,10 @@
+
+.ql-container {
+  height: 600px;
+  overflow-y: auto;
+}
+
+.ql-editor {
+  height: 100%;
+  overflow-y: auto;
+}
