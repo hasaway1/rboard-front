@@ -5,7 +5,7 @@ const useSessionStore = create((set, get) => ({
   passwordVerified: false,
 
   setSignupSuccess:()=>set({signupSuccess:true}),
-  setPasswordVerified:(param) => set({isPasswordVerified:param }),
+  setPasswordVerified:(param) => set({passwordVerified:param }),
 
 }));
 

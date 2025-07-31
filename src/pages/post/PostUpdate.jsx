@@ -1,21 +1,22 @@
-import 'react-quill-new/dist/quill.snow.css';
 import './PostWrite.css';
+import 'react-quill-new/dist/quill.snow.css';
 
-import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
-import ReactQuill from "react-quill-new";
 import useSWR from 'swr';
+import Swal from "sweetalert2";
 import { Alert } from 'react-bootstrap';
+import ReactQuill from "react-quill-new";
 import { useEffect, useRef, useState } from 'react';
+import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
 
-import BlockButton from "../../components/common/BlockButton";
-import { AsyncStatus, modules } from '../../utils/constants';
-import { convertToInt } from '../../utils/constants';
 import { read, update } from '../../utils/postApi';
 import useAuthStore from '../../stores/useAuthStore';
+import { convertToInt } from '../../utils/constants';
+import { AsyncStatus, modules } from '../../utils/constants';
 import CommonInput from '../../components/member/CommonInput';
+import BlockButton from "../../components/common/BlockButton";
 
 function PostUpdate() {
-  // 1. 필요한 기능 가져오기(작성 상태, 제목 커스텀 훅, 내용 상태, 라우팅, 로그인 이름)
+  // 1. 작성 상태, 제목 커스텀 훅, 내용 상태, 라우팅, 로그인 객체 
   const [status, setStatus] = useState(AsyncStatus.IDLE);
   const [content, setContent] = useState('');
   const titleRef = useRef();
@@ -28,7 +29,7 @@ function PostUpdate() {
   let pno = convertToInt(params.get('pno'), null);
   const {data, error, isLoading } = useSWR(['pno', pno], ()=>read(pno));
 
-  // 3. 파생 상태 : 로그인 여부 및 작성자 여부
+  // 3. 파생 상태 : 작성자 여부
   const isSubmitting = status === AsyncStatus.SUBMITTING;
   const isWriter = data && username && data.writer === username;
 
@@ -41,11 +42,11 @@ function PostUpdate() {
   }, [data]);
 
   // 5. 글 변경
-  const handleUpdatePost =async()=>{
+  const doUpdatePost =async()=>{
     if (isSubmitting) return;
     setStatus(AsyncStatus.SUBMITTING);
 
-    if (!(vTitle.check())) {
+    if (!titleRef.current.check()) {
       setStatus(AsyncStatus.IDLE);
       return;
     }
@@ -55,9 +56,10 @@ function PostUpdate() {
       await update(requestForm);
       navigate(`/post/read?pno=${pno}`);
     } catch(err) {
-      console.log(err);
-      setStatus(AsyncStatus.FAIL)
-    } 
+      Swal.fire({icon:'error', text:"댓글을 작성하지 못했습니다"});
+    } finally {
+      setStatus(AsyncStatus.IDLE)
+    }
   }
 
   // 6.  조건 렌더링(conditional rendering)
@@ -69,7 +71,7 @@ function PostUpdate() {
     <>
       <CommonInput label="제목" ref={titleRef} />
       <ReactQuill theme="snow" name="content" module={modules} value={content} onChange={(value)=>setContent(value)}/>
-      <BlockButton label="변 경" onClick={handleUpdatePost} wait={status===AsyncStatus.SUBMITTING} />
+      <BlockButton label="변 경" onClick={doUpdatePost} wait={isSubmitting} />
     </>
   )
 }

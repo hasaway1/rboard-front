@@ -1,16 +1,16 @@
 import { useRef, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { Alert } from 'react-bootstrap';
 
 import {checkPassword} from '../../utils/memberApi';
 import { AsyncStatus } from '../../utils/constants';
 import SignupInput from '../../components/member/SignupInput';
 import BlockButton from '../../components/common/BlockButton';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
+import Swal from "sweetalert2";
+import useSessionStore from "../../stores/useSessionStore";
 
 function MemberCheckPassword() {
   const [status, setStatus] = useState(AsyncStatus.IDLE);
-  const {signupSuccess} = useSessionStore();
+  const {passwordVerified, setPasswordVerified} = useSessionStore();
   const passwordRef = useRef();
   const navigate = useNavigate();
 
@@ -25,22 +25,22 @@ function MemberCheckPassword() {
     
     try {
       await checkPassword(passwordRef.current.getValue());
-      setPasswordVerified();
+      setPasswordVerified(true);
       navigate("/member/read");
       return;
     } catch(err) {
-      setStatus(AsyncStatus.FAIL);
-      console.log(err);
-    } 
+      Swal.fire({icon:'error', text:"잘못된 비밀번호입니다. 다시 입력해주세요" });
+      passwordRef.current.setValue("");
+    } finally {
+      setStatus(AsyncStatus.IDLE);
+    }
   }
 
-  if(signupSuccess) return <Navigate to="/member/read" replace />;
-  if(status===AsyncStatus.SUBMITTING) return <LoadingSpinner />;
+  if(passwordVerified) return <Navigate to="/member/read" replace />;
 
   return (
     <div>
-      {status===AsyncStatus.FAIL &&  <Alert variant='danger'>비밀번호를 확인하지 못했습니다</Alert>}
-      <SignupInput name="password" ref={currentPasswordRef} type='password' />
+      <SignupInput name="password" ref={passwordRef} type='password' />
       <BlockButton label="확 인" onClick={handleCheckPassword} wait={status===AsyncStatus.SUBMITTING} />
     </div>
   )

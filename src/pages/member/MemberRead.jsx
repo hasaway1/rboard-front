@@ -1,17 +1,19 @@
-import { useEffect, useRef, useState } from "react";
-import { Navigate, useNavigate } from 'react-router-dom';
-import { Alert } from "react-bootstrap";
+import Swal from "sweetalert2";
 import useSWR, { mutate } from "swr";
+import { Alert } from "react-bootstrap";
+import { useRef, useState } from "react";
+import { Navigate, useNavigate } from 'react-router-dom';
 
-import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { AsyncStatus } from "../../utils/constants";
-import { changeProfile, read } from '../../utils/memberApi';
 import useSessionStore from "../../stores/useSessionStore";
+import { changeProfile, read } from '../../utils/memberApi';
 import PhotoInput from "../../components/member/PhotoInput";
+import LoadingSpinner from '../../components/common/LoadingSpinner';
 
 function MemberRead() {
   const {passwordVerified} = useSessionStore();
   const [status, setStatus] = useState(AsyncStatus.IDLE);
+  const [hasProfile, setHasProfile] = useState(false);
   const profileRef = useRef();
   const navigate = useNavigate();
 
@@ -20,7 +22,11 @@ function MemberRead() {
   // - useSWR 훅은 키를 null로 지정할 경우  훅을 실행하지 않는다
   const { data, error, isLoading } = useSWR(passwordVerified ? ['me'] : null, () => read());
 
-  const handleChangeProfile=async()=>{
+  const selectProfile=()=>{
+    setHasProfile(true);
+  }
+
+  const doChangeProfile=async()=>{
     if(status===AsyncStatus.SUBMITTING) return;
     setStatus(AsyncStatus.SUBMITTING);
 
@@ -34,27 +40,27 @@ function MemberRead() {
       const {data} = await changeProfile(formData);
       // 부모의 swr 캐시를 갱신
       mutate('me', data, false);
-      vProfile.reset();
-      setStatus(AsyncStatus.SUCCESS);
+      profileRef.current.setValue();
+      Swal.fire({icon:'success', text:"프사를 변경했습니다" });
     } catch(err) {
-      setStatus(AsyncStatus.FAIL);
-      console.log(err);
-    } 
+      Swal.fire({icon:'error', text:"프사를 변경하지 못했습니다" });
+    } finally {
+       setStatus(AsyncStatus.IDLE);
+    }
   }
   
-  // 5. 조건 렌더링
   if(!passwordVerified) return <Navigate to="/member/check-password" replace />
   if(isLoading)  return <LoadingSpinner />;
   if(error) return <Alert variant='danger'>서버가 응답하지 않습니다</Alert>;
-
+  
   return (
     <div>
       <table className='table table-border'>
         <tbody>
           <tr>
             <td colSpan={2}>
-              <PhotoInput ref={profileRef} read={true} />
-              <button className='btn btn-primary' onClick={handleChangeProfile} disabled={!vProfile.value}>프사 변경</button>
+              <PhotoInput ref={profileRef} value={data.profile} onChange={selectProfile} />
+              <button className='btn btn-primary' onClick={doChangeProfile} disabled={!hasProfile}>프사 변경</button>
             </td>
           </tr>
           <tr>

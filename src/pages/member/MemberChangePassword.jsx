@@ -1,14 +1,12 @@
+import Swal from "sweetalert2";
 import { useRef, useState } from 'react';
-import { Alert } from 'react-bootstrap';
 
-import {changePassword} from '../../utils/memberApi';
-import { AsyncStatus } from '../../utils/constants';
 import { useNavigate } from 'react-router-dom';
-import ConfirmPasswordInput from '../../components/member/ConfirmPasswordInput';
+import { AsyncStatus } from '../../utils/constants';
+import {changePassword} from '../../utils/memberApi';
 import SignupInput from '../../components/member/SignupInput';
 import BlockButton from '../../components/common/BlockButton';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
-
+import ConfirmPasswordInput from '../../components/member/ConfirmPasswordInput';
 
 function MemberChangePassword() {
   const [status, setStatus] = useState(AsyncStatus.IDLE);
@@ -32,29 +30,23 @@ function MemberChangePassword() {
     try {
       const requestForm = {currentPassword:currentPasswordRef.current.getValue(), newPassword:newPasswordRef.current.getValue()};
       await changePassword(requestForm);
-      setStatus(AsyncStatus.SUCCESS);
-      alert('비밀번호를 변경했습니다');
-      navigate('/');
+      Swal.fire({icon:'success', text:"비밀번호를 변경했습니다" }).then(()=>navigate('/'));
     } catch(err) {
-      // 비밀번호를 변경에 실패한 경우 입력한 값들을 모두 지운다
+      Swal.fire({icon:'error', text:"비밀번호를 변경하지 못했습니다" });
       currentPasswordRef.current.setValue("")
       newPasswordRef.current.setValue("")
       currentPasswordRef.current.setValue("")
-      setStatus(AsyncStatus.FAIL);
+    } finally {
+      setStatus(AsyncStatus.IDLE);
     }
   }
-
-  if(status===AsyncStatus.SUBMITTING) return <LoadingSpinner />;
 
   return (
     <div>
       <h1>비밀번호 변경</h1>
-      <div style={{height:400}}>
-        <SignupInput name="password" ref={currentPasswordRef} type='password' />
-        <SignupInput name="password" ref={newPasswordRef} type='password' />
-        <ConfirmPasswordInput passwordRef={newPasswordRef} ref={confirmPasswordRef}  />
-        {status===AsyncStatus.FAIL &&  <Alert variant='danger'>비밀번호를 변경하지 못했습니다</Alert>}
-      </div>
+      <SignupInput name="password" ref={currentPasswordRef} type='password' />
+      <SignupInput name="password" ref={newPasswordRef} type='password' />
+      <ConfirmPasswordInput passwordRef={newPasswordRef} ref={confirmPasswordRef}  />
       <BlockButton label="변 경" onClick={handleChangePassword} wait={status===AsyncStatus.SUBMITTING}/>
     </div>
   )

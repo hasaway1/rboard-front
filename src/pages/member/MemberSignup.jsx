@@ -1,17 +1,15 @@
+import Swal from "sweetalert2";
 import { useRef, useState } from "react";
-import { Alert } from "react-bootstrap";
+import { useNavigate } from "react-router-dom";
 
 import {signup} from '../../utils/memberApi';
 import { AsyncStatus } from "../../utils/constants";
-import { useNavigate } from "react-router-dom";
 import useSessionStore from "../../stores/useSessionStore";
 import PhotoInput from "../../components/member/PhotoInput";
-import UsernameInput from "../../components/member/UsernameInput";
 import SignupInput from "../../components/member/SignupInput";
-import LoadingSpinner from "../../components/common/LoadingSpinner";
-import ConfirmPasswordInput from "../../components/member/ConfirmPasswordInput";
 import BlockButton from '../../components/common/BlockButton';
-
+import UsernameInput from "../../components/member/UsernameInput";
+import ConfirmPasswordInput from "../../components/member/ConfirmPasswordInput";
 
 function MemberSignup() {
   const [status, setStatus] = useState(AsyncStatus.IDLE);
@@ -23,7 +21,6 @@ function MemberSignup() {
   const passwordRef = useRef();
   const confirmPasswordRef = useRef();
   const emailRef = useRef();
-
 
   const handleMemberSignup=async()=>{
     if(status===AsyncStatus.SUBMITTING) return;
@@ -47,19 +44,16 @@ function MemberSignup() {
     try {
       await signup(formData);
       setSignupSuccess(true);
-      navigate("/member/verify");
-      setStatus(AsyncStatus.IDLE);
-      return;
+      Swal.fire({icon:'success', text:"획인 코드를 이메일로 발송했습니다"}).then(()=>navigate("/member/verify"));
     } catch(err) {
-      setStatus(AsyncStatus.FAIL);
-      console.log(err);
+      Swal.fire({icon:'error', text:"회원 가입에 실패했습니다" });
+    } finally {
+      setStatus(AsyncStatus.IDLE);
     }
   };
 
-  if(status===AsyncStatus.SUBMITTING) return <LoadingSpinner />
   return (
     <>
-      {status===AsyncStatus.FAIL &&  <Alert variant='danger'>회원 가입에 실패했습니다</Alert>}
       <PhotoInput ref={profileRef} read={false} />
       <UsernameInput ref={usernameRef} />
       <SignupInput name="email" ref={emailRef} />
